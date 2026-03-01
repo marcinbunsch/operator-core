@@ -21,3 +21,5 @@ export {
   type RunnerFn,
   type ReconnectFn,
 } from "./services/JobQueueService.js";
+
+export { SpawnService, type SpawnOptions } from "./services/SpawnService.js";
