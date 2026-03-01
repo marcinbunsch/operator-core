@@ -2,13 +2,15 @@
 
 export const VERSION = "0.0.1";
 
-// Agent types
+// Agent types and loop
 export {
   AgentContext,
   type AgentContextValue,
   type AgentResponse,
   type ResponseTarget,
 } from "./agent/types.js";
+
+export { runAgenticLoop, type AgenticLoopConfig, type AgenticLoopResult } from "./agent/loop.js";
 
 // Errors
 export { JobNotFoundError, SpawnError } from "./errors.js";
