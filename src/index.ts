@@ -9,3 +9,15 @@ export {
   type AgentResponse,
   type ResponseTarget,
 } from "./agent/types.js";
+
+// Errors
+export { JobNotFoundError, SpawnError } from "./errors.js";
+
+// Services
+export {
+  JobQueueService,
+  type Job,
+  type JobStatus,
+  type RunnerFn,
+  type ReconnectFn,
+} from "./services/JobQueueService.js";
