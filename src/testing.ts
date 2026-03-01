@@ -7,6 +7,9 @@
 
 import { Effect, Layer } from "effect";
 import { JobQueueService, type Job, type RunnerFn, type ReconnectFn } from "./services/JobQueueService.js";
+
+// Re-export Job type for test files
+export type { Job };
 import { SpawnService, type SpawnOptions } from "./services/SpawnService.js";
 
 // ============================================================================
