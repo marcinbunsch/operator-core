@@ -126,23 +126,30 @@ export const FilesystemToolHandlers = FilesystemToolkit.toLayer(
     return {
       file_read: ({ path: filePath }) =>
         Effect.gen(function* () {
-          yield* Effect.logInfo("Tool call: file_read").pipe(
-            Effect.annotateLogs({ path: filePath }),
-          );
+          yield* Effect.logInfo(`Tool call: file_read | path=${filePath}`);
           const resolvedPath = yield* sandbox.resolvePath(filePath);
           const content = yield* Effect.tryPromise({
             try: () => fs.readFile(resolvedPath, "utf-8"),
             catch: (e) => e,
           });
-          return { content, path: filePath };
+          const result = { content, path: filePath };
+          yield* Effect.logInfo(
+            `Tool result: file_read | path=${filePath} contentLength=${content.length}`,
+          );
+          return result;
         }).pipe(
-          Effect.catchAll((e) => Effect.succeed(formatError(e, filePath))),
+          Effect.catchAll((e) => {
+            const err = formatError(e, filePath);
+            return Effect.logInfo(`Tool result: file_read | path=${filePath} error=${err.error}`).pipe(
+              Effect.map(() => err),
+            );
+          }),
         ),
 
       file_write: ({ path: filePath, content }) =>
         Effect.gen(function* () {
-          yield* Effect.logInfo("Tool call: file_write").pipe(
-            Effect.annotateLogs({ path: filePath, contentLength: content.length }),
+          yield* Effect.logInfo(
+            `Tool call: file_write | path=${filePath} contentLength=${content.length}`,
           );
           const resolvedPath = yield* sandbox.resolvePath(filePath);
           const dir = path.dirname(resolvedPath);
@@ -154,23 +161,26 @@ export const FilesystemToolHandlers = FilesystemToolkit.toLayer(
             try: () => fs.writeFile(resolvedPath, content, "utf-8"),
             catch: (e) => e,
           });
+          const bytesWritten = Buffer.byteLength(content, "utf-8");
+          yield* Effect.logInfo(`Tool result: file_write | path=${filePath} bytesWritten=${bytesWritten}`);
           return {
             success: true as const,
             path: filePath,
-            bytesWritten: Buffer.byteLength(content, "utf-8"),
+            bytesWritten,
           };
         }).pipe(
-          Effect.catchAll((e) => Effect.succeed(formatError(e, filePath))),
+          Effect.catchAll((e) => {
+            const err = formatError(e, filePath);
+            return Effect.logInfo(`Tool result: file_write | path=${filePath} error=${err.error}`).pipe(
+              Effect.map(() => err),
+            );
+          }),
         ),
 
       file_edit: ({ path: filePath, old_text, new_text }) =>
         Effect.gen(function* () {
-          yield* Effect.logInfo("Tool call: file_edit").pipe(
-            Effect.annotateLogs({
-              path: filePath,
-              oldTextLength: old_text.length,
-              newTextLength: new_text.length,
-            }),
+          yield* Effect.logInfo(
+            `Tool call: file_edit | path=${filePath} oldTextLength=${old_text.length} newTextLength=${new_text.length}`,
           );
           const resolvedPath = yield* sandbox.resolvePath(filePath);
           const content = yield* Effect.tryPromise({
@@ -183,10 +193,12 @@ export const FilesystemToolHandlers = FilesystemToolkit.toLayer(
           const replacements = matches?.length ?? 0;
 
           if (replacements === 0) {
-            return {
+            const err = {
               error: `Text not found in file: "${old_text.slice(0, 50)}${old_text.length > 50 ? "..." : ""}"`,
               path: filePath,
             };
+            yield* Effect.logInfo(`Tool result: file_edit | path=${filePath} error=${err.error}`);
+            return err;
           }
 
           const newContent = content.replace(regex, new_text);
@@ -195,15 +207,21 @@ export const FilesystemToolHandlers = FilesystemToolkit.toLayer(
             catch: (e) => e,
           });
 
+          yield* Effect.logInfo(`Tool result: file_edit | path=${filePath} replacements=${replacements}`);
           return { success: true as const, path: filePath, replacements };
         }).pipe(
-          Effect.catchAll((e) => Effect.succeed(formatError(e, filePath))),
+          Effect.catchAll((e) => {
+            const err = formatError(e, filePath);
+            return Effect.logInfo(`Tool result: file_edit | path=${filePath} error=${err.error}`).pipe(
+              Effect.map(() => err),
+            );
+          }),
         ),
 
       file_append: ({ path: filePath, content }) =>
         Effect.gen(function* () {
-          yield* Effect.logInfo("Tool call: file_append").pipe(
-            Effect.annotateLogs({ path: filePath, contentLength: content.length }),
+          yield* Effect.logInfo(
+            `Tool call: file_append | path=${filePath} contentLength=${content.length}`,
           );
           const resolvedPath = yield* sandbox.resolvePath(filePath);
           const dir = path.dirname(resolvedPath);
@@ -215,13 +233,20 @@ export const FilesystemToolHandlers = FilesystemToolkit.toLayer(
             try: () => fs.appendFile(resolvedPath, content, "utf-8"),
             catch: (e) => e,
           });
+          const bytesAppended = Buffer.byteLength(content, "utf-8");
+          yield* Effect.logInfo(`Tool result: file_append | path=${filePath} bytesAppended=${bytesAppended}`);
           return {
             success: true as const,
             path: filePath,
-            bytesAppended: Buffer.byteLength(content, "utf-8"),
+            bytesAppended,
           };
         }).pipe(
-          Effect.catchAll((e) => Effect.succeed(formatError(e, filePath))),
+          Effect.catchAll((e) => {
+            const err = formatError(e, filePath);
+            return Effect.logInfo(`Tool result: file_append | path=${filePath} error=${err.error}`).pipe(
+              Effect.map(() => err),
+            );
+          }),
         ),
     };
   }),

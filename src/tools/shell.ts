@@ -54,8 +54,8 @@ export const ShellToolHandlers = ShellToolkit.toLayer(
     return {
       shell: ({ command, cwd, timeout }) =>
         Effect.gen(function* () {
-          yield* Effect.logInfo("Tool call: shell").pipe(
-            Effect.annotateLogs({ command, cwd: cwd ?? "(default)", timeout: timeout ?? 30000 }),
+          yield* Effect.logInfo(
+            `Tool call: shell | command=${JSON.stringify(command)} cwd=${cwd ?? "(default)"} timeout=${timeout ?? 30000}`,
           );
           // Resolve working directory
           const workingDir =
@@ -131,15 +131,21 @@ export const ShellToolHandlers = ShellToolkit.toLayer(
             },
           });
 
+          yield* Effect.logInfo(
+            `Tool result: shell | exitCode=${result.exitCode} stdoutLength=${result.stdout.length} stderrLength=${result.stderr.length}`,
+          );
           return result;
         }).pipe(
-          Effect.catchAll((e) =>
-            Effect.succeed({
+          Effect.catchAll((e) => {
+            const result = {
               stdout: "",
               stderr: e instanceof Error ? e.message : String(e),
               exitCode: -1,
-            }),
-          ),
+            };
+            return Effect.logInfo(
+              `Tool result: shell | exitCode=${result.exitCode} error=${result.stderr}`,
+            ).pipe(Effect.map(() => result));
+          }),
         ),
     };
   }),

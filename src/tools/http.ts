@@ -71,24 +71,20 @@ export const HttpToolHandlers = HttpToolkit.toLayer(
     return {
       http_request: ({ url, method, headers, body, timeout }) =>
         Effect.gen(function* () {
-          yield* Effect.logInfo("Tool call: http_request").pipe(
-            Effect.annotateLogs({
-              url,
-              method: method ?? "GET",
-              hasHeaders: headers !== undefined,
-              hasBody: body !== undefined,
-              timeout: timeout ?? 30000,
-            }),
+          yield* Effect.logInfo(
+            `Tool call: http_request | url=${url} method=${method ?? "GET"} hasHeaders=${headers !== undefined} hasBody=${body !== undefined} timeout=${timeout ?? 30000}`,
           );
           // Validate URL against allowlist and SSRF protection
           const validatedUrl = yield* sandbox.validateUrl(url);
 
           // Only allow http and https
           if (validatedUrl.protocol !== "http:" && validatedUrl.protocol !== "https:") {
-            return {
+            const err = {
               error: `Only HTTP and HTTPS protocols are allowed, got: ${validatedUrl.protocol}`,
               url,
             };
+            yield* Effect.logInfo(`Tool result: http_request | error=${err.error}`);
+            return err;
           }
 
           const httpMethod = method ?? "GET";
@@ -98,7 +94,9 @@ export const HttpToolHandlers = HttpToolkit.toLayer(
             try {
               httpHeaders = JSON.parse(headers) as Record<string, string>;
             } catch {
-              return { error: `Invalid headers JSON: ${headers}`, url };
+              const err = { error: `Invalid headers JSON: ${headers}`, url };
+              yield* Effect.logInfo(`Tool result: http_request | error=${err.error}`);
+              return err;
             }
           }
           const timeoutMs = timeout ?? 30000;
@@ -158,8 +156,24 @@ export const HttpToolHandlers = HttpToolkit.toLayer(
             },
           });
 
+          // Log result
+          if ("error" in response) {
+            yield* Effect.logInfo(`Tool result: http_request | error=${response.error}`);
+          } else {
+            yield* Effect.logInfo(
+              `Tool result: http_request | status=${response.status} bodyLength=${response.body.length}`,
+            );
+          }
+
           return response;
-        }).pipe(Effect.catchAll((e) => Effect.succeed(formatError(e, url)))),
+        }).pipe(
+          Effect.catchAll((e) => {
+            const err = formatError(e, url);
+            return Effect.logInfo(`Tool result: http_request | error=${err.error}`).pipe(
+              Effect.map(() => err),
+            );
+          }),
+        ),
     };
   }),
 );
