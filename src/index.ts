@@ -38,3 +38,34 @@ export {
   Toolkit,
   AiError,
 } from "./ai/index.js";
+
+// Sandboxed Tools
+export {
+  // Sandbox service
+  SandboxService,
+  SandboxViolationError,
+  DomainNotAllowedError,
+  makeSandboxLayer,
+  type SandboxConfig,
+  // Filesystem tools
+  FileRead,
+  FileWrite,
+  FileEdit,
+  FileAppend,
+  FilesystemToolkit,
+  FilesystemToolHandlers,
+  FileOperationError,
+  // Shell tool
+  Shell,
+  ShellToolkit,
+  ShellToolHandlers,
+  ShellError,
+  // HTTP tool
+  HttpRequest,
+  HttpToolkit,
+  HttpToolHandlers,
+  HttpRequestError,
+  // Combined
+  SandboxedToolkit,
+  SandboxedToolHandlers,
+} from "./tools/index.js";
