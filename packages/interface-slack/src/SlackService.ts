@@ -1,6 +1,23 @@
-import { Effect } from "effect";
+import { Effect, Schedule } from "effect";
 import { App, LogLevel } from "@slack/bolt";
 import { ConfigError, SlackError } from "./errors.js";
+import type { SocketModeClientLike } from "./slackReconnect.js";
+import { createSocketModeReconnector } from "./slackReconnect.js";
+import { createSocketModeReceiverWithReconnect } from "./slackSocketMode.js";
+
+// Check if error is a transient Socket Mode connection error that should be retried
+const isTransientSocketError = (e: unknown): boolean => {
+  const message = String(e);
+  return (
+    message.includes("client is not ready") ||
+    message.includes("Failed to send a WebSocket message") ||
+    message.includes("socket_mode_no_reply_received_error") ||
+    message.includes("Expected 101 status code") ||
+    message.includes("ECONNREFUSED") ||
+    message.includes("ENOTFOUND") ||
+    message.includes("ETIMEDOUT")
+  );
+};
 
 /**
  * SlackService provides a scoped connection to the Slack API.
@@ -27,16 +44,49 @@ export class SlackService extends Effect.Service<SlackService>()(
         );
       }
 
+      // Set up reconnect handling
+      const reconnector = createSocketModeReconnector();
+      const scheduleReconnect = (reason: string, client?: SocketModeClientLike) => {
+        return reconnector.scheduleReconnect(reason, client, (message, error) => {
+          if (error !== undefined) {
+            console.error(message, error);
+            return;
+          }
+          console.error(message);
+        });
+      };
+
+      const { receiver } = createSocketModeReceiverWithReconnect({
+        appToken,
+        logLevel: LogLevel.ERROR,
+        scheduleReconnect,
+        isTransientSocketError,
+      });
+
+      // Retry schedule for transient errors
+      const retrySchedule = Schedule.exponential("100 millis").pipe(
+        Schedule.jittered,
+        Schedule.compose(Schedule.recurs(3)),
+      );
+
+      const transientRetry = Effect.retry({
+        schedule: retrySchedule,
+        while: (err: SlackError) => isTransientSocketError(err.cause),
+      });
+
       const app = new App({
         token,
-        appToken,
         socketMode: true,
         logLevel: LogLevel.ERROR,
+        receiver,
       });
 
       // Global error handler for unhandled Slack errors
       app.error(async (error) => {
         console.error("[slack] Error:", error);
+        if (isTransientSocketError(error)) {
+          scheduleReconnect(String(error), receiver.client as SocketModeClientLike);
+        }
       });
 
       yield* Effect.log("[slack] App instance created");
@@ -44,6 +94,7 @@ export class SlackService extends Effect.Service<SlackService>()(
       // Add finalizer to stop the app when scope closes
       yield* Effect.addFinalizer(() =>
         Effect.gen(function* () {
+          reconnector.stop();
           yield* Effect.log("[slack] Stopping Slack connection...");
           yield* Effect.tryPromise({
             try: () => app.stop(),
@@ -71,8 +122,8 @@ export class SlackService extends Effect.Service<SlackService>()(
          * Send a direct message to a user.
          * Opens a DM channel if needed.
          */
-        sendDm: (userId: string, text: string): Effect.Effect<void, SlackError> =>
-          Effect.tryPromise({
+        sendDm: (userId: string, text: string): Effect.Effect<void, SlackError> => {
+          const dmEffect = Effect.tryPromise({
             try: async () => {
               const dmResult = await app.client.conversations.open({ users: userId });
               const dmChannelId = dmResult.channel?.id;
@@ -81,7 +132,9 @@ export class SlackService extends Effect.Service<SlackService>()(
               }
             },
             catch: (e) => new SlackError({ operation: "sendDm", cause: e }),
-          }),
+          });
+          return dmEffect.pipe(transientRetry, Effect.asVoid);
+        },
 
         /**
          * Post a message to a channel or thread.
@@ -90,8 +143,8 @@ export class SlackService extends Effect.Service<SlackService>()(
           channel: string,
           text: string,
           options?: { thread_ts?: string },
-        ): Effect.Effect<void, SlackError> =>
-          Effect.tryPromise({
+        ): Effect.Effect<void, SlackError> => {
+          const postEffect = Effect.tryPromise({
             try: () => {
               const args: { channel: string; text: string; thread_ts?: string } = { channel, text };
               if (options?.thread_ts) {
@@ -100,7 +153,13 @@ export class SlackService extends Effect.Service<SlackService>()(
               return app.client.chat.postMessage(args);
             },
             catch: (e) => new SlackError({ operation: "postMessage", cause: e }),
-          }).pipe(Effect.asVoid),
+          });
+          return postEffect.pipe(
+            transientRetry,
+            Effect.tapError((err) => Effect.log(`[slack] postMessage failed after retries: ${err.operation}`)),
+            Effect.asVoid,
+          );
+        },
 
         /**
          * Get the bot's own user ID.
@@ -122,8 +181,8 @@ export class SlackService extends Effect.Service<SlackService>()(
          * Open a DM channel with a user.
          * Returns the channel ID.
          */
-        openDm: (userId: string): Effect.Effect<string, SlackError> =>
-          Effect.tryPromise({
+        openDm: (userId: string): Effect.Effect<string, SlackError> => {
+          const openEffect = Effect.tryPromise({
             try: async () => {
               const result = await app.client.conversations.open({ users: userId });
               if (!result.channel?.id) {
@@ -132,7 +191,9 @@ export class SlackService extends Effect.Service<SlackService>()(
               return result.channel.id;
             },
             catch: (e) => new SlackError({ operation: "openDm", cause: e }),
-          }),
+          });
+          return openEffect.pipe(transientRetry);
+        },
 
         /**
          * Upload a file to a channel.
@@ -143,8 +204,8 @@ export class SlackService extends Effect.Service<SlackService>()(
           file: Buffer,
           initialComment?: string,
           threadTs?: string,
-        ): Effect.Effect<void, SlackError> =>
-          Effect.tryPromise({
+        ): Effect.Effect<void, SlackError> => {
+          const uploadEffect = Effect.tryPromise({
             try: () => {
               // Build args object, only including optional fields if provided
               // Cast needed due to Slack types not supporting exactOptionalPropertyTypes
@@ -158,7 +219,9 @@ export class SlackService extends Effect.Service<SlackService>()(
               return app.client.filesUploadV2(args);
             },
             catch: (e) => new SlackError({ operation: "uploadFile", cause: e }),
-          }).pipe(Effect.asVoid),
+          });
+          return uploadEffect.pipe(transientRetry, Effect.asVoid);
+        },
       };
     }),
   },
