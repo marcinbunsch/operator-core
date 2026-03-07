@@ -2,26 +2,28 @@
  * Convert standard Markdown to Slack mrkdwn format.
  *
  * Handles:
- * - **bold** -> *bold*
- * - *italic* -> _italic_
+ * - **bold** / __bold__ -> *bold*
+ * - ~~strikethrough~~ -> ~strikethrough~
  * - [text](url) -> <url|text>
  * - # headers -> *headers*
+ * - * item / - item -> • item
+ *
+ * Note: Does not convert *italic* to _italic_ because it conflicts
+ * with header output and list items. Most LLMs use _italic_ anyway.
  */
 export const markdownToMrkdwn = (markdown: string): string => {
-  let result = markdown;
-
-  // Convert *italic* to _italic_ FIRST (before bold conversion)
-  // Match single * not preceded or followed by *
-  result = result.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, "_$1_");
-
-  // Convert **bold** to *bold*
-  result = result.replace(/\*\*(.+?)\*\*/g, "*$1*");
-
-  // Convert [text](url) to <url|text>
-  result = result.replace(/\[([^\]]+)\]\(([^)]+)\)/g, "<$2|$1>");
-
-  // Convert headers (# ## ###) to bold
-  result = result.replace(/^#{1,6}\s+(.+)$/gm, "*$1*");
-
-  return result;
+  return (
+    markdown
+      // Headers to bold
+      .replace(/^#{1,6}\s+(.+)$/gm, "*$1*")
+      // Bold: **text** or __text__ → *text*
+      .replace(/\*\*(.+?)\*\*/g, "*$1*")
+      .replace(/__(.+?)__/g, "*$1*")
+      // Strikethrough: ~~text~~ → ~text~
+      .replace(/~~(.+?)~~/g, "~$1~")
+      // Links: [text](url) → <url|text>
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "<$2|$1>")
+      // List items: * item or - item → • item
+      .replace(/^[*-] /gm, "• ")
+  );
 };

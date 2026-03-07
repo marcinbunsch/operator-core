@@ -10,13 +10,6 @@ describe("markdownToMrkdwn", () => {
     }),
   );
 
-  it.effect("converts italic markdown to mrkdwn", () =>
-    Effect.sync(() => {
-      const result = markdownToMrkdwn("*italic text*");
-      expect(result).toBe("_italic text_");
-    }),
-  );
-
   it.effect("converts links to mrkdwn format", () =>
     Effect.sync(() => {
       const result = markdownToMrkdwn("[Click here](https://example.com)");
@@ -34,7 +27,7 @@ describe("markdownToMrkdwn", () => {
   it.effect("handles mixed formatting", () =>
     Effect.sync(() => {
       const result = markdownToMrkdwn(
-        "**Bold** and *italic* with [link](https://example.com)",
+        "**Bold** and _italic_ with [link](https://example.com)",
       );
       expect(result).toBe("*Bold* and _italic_ with <https://example.com|link>");
     }),
@@ -44,6 +37,27 @@ describe("markdownToMrkdwn", () => {
     Effect.sync(() => {
       const result = markdownToMrkdwn("Just plain text");
       expect(result).toBe("Just plain text");
+    }),
+  );
+
+  it.effect("converts __bold__ to mrkdwn", () =>
+    Effect.sync(() => {
+      const result = markdownToMrkdwn("__bold text__");
+      expect(result).toBe("*bold text*");
+    }),
+  );
+
+  it.effect("converts strikethrough to mrkdwn", () =>
+    Effect.sync(() => {
+      const result = markdownToMrkdwn("~~deleted~~");
+      expect(result).toBe("~deleted~");
+    }),
+  );
+
+  it.effect("converts list items to bullets", () =>
+    Effect.sync(() => {
+      const result = markdownToMrkdwn("* Item 1\n- Item 2\n* Item 3");
+      expect(result).toBe("• Item 1\n• Item 2\n• Item 3");
     }),
   );
 });
