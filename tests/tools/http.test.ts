@@ -6,9 +6,7 @@ import { makeSandboxLayer } from "../../src/tools/SandboxService.js";
 import { withTempDir } from "../helpers.js";
 
 const makeTestLayer = (workspaces: string[], allowedHttpDomains?: string[]) =>
-  HttpToolHandlers.pipe(
-    Layer.provide(makeSandboxLayer({ workspaces, allowedHttpDomains })),
-  );
+  HttpToolHandlers.pipe(Layer.provide(makeSandboxLayer({ workspaces, allowedHttpDomains })));
 
 describe("HttpTool", () => {
   describe("URL validation", () => {

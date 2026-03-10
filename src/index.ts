@@ -26,6 +26,13 @@ export {
 
 export { SpawnService, type SpawnOptions } from "./services/SpawnService.js";
 
+export {
+  SchedulerService,
+  type Schedule,
+  type ScheduleType,
+  type ScheduleStatus,
+} from "./services/SchedulerService.js";
+
 // AI - LLM abstraction and providers
 export {
   createOpenAiLayer,
@@ -65,6 +72,14 @@ export {
   HttpToolkit,
   HttpToolHandlers,
   HttpRequestError,
+  // Scheduler tools
+  ScheduleTask,
+  ListSchedules,
+  DeleteSchedule,
+  PauseSchedule,
+  ResumeSchedule,
+  SchedulerToolkit,
+  SchedulerToolHandlers,
   // Combined
   SandboxedToolkit,
   SandboxedToolHandlers,

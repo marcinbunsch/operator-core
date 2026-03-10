@@ -6,7 +6,12 @@
  */
 
 import { Effect, Layer } from "effect";
-import { JobQueueService, type Job, type RunnerFn, type ReconnectFn } from "./services/JobQueueService.js";
+import {
+  JobQueueService,
+  type Job,
+  type RunnerFn,
+  type ReconnectFn,
+} from "./services/JobQueueService.js";
 
 // Re-export Job type for test files
 export type { Job };
@@ -20,9 +25,7 @@ import { SpawnService, type SpawnOptions } from "./services/SpawnService.js";
  * Create a mock Job object with sensible defaults.
  * Override any field by passing it in the overrides object.
  */
-export const createMockJob = (
-  overrides: Partial<Job> & { id: string; type: string },
-): Job => ({
+export const createMockJob = (overrides: Partial<Job> & { id: string; type: string }): Job => ({
   status: "queued",
   createdAt: new Date().toISOString(),
   workingDir: "/tmp",
@@ -73,7 +76,12 @@ export const makeMockJobQueueService = (
 
   return Layer.succeed(JobQueueService, {
     configure: () => Effect.void,
-    registerRunner: (type: string, concurrency: number, _runner: RunnerFn, _reconnect?: ReconnectFn) => {
+    registerRunner: (
+      type: string,
+      concurrency: number,
+      _runner: RunnerFn,
+      _reconnect?: ReconnectFn,
+    ) => {
       onRegisterRunner?.(type, concurrency);
       return Effect.void;
     },

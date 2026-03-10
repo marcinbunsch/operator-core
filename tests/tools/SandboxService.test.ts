@@ -35,15 +35,13 @@ describe("SandboxService", () => {
     );
 
     it("throws when workspace does not exist", () => {
-      expect(() =>
-        makeSandboxLayer({ workspaces: ["/nonexistent/path/12345"] }),
-      ).toThrow("does not exist");
+      expect(() => makeSandboxLayer({ workspaces: ["/nonexistent/path/12345"] })).toThrow(
+        "does not exist",
+      );
     });
 
     it("throws when no workspaces provided", () => {
-      expect(() => makeSandboxLayer({ workspaces: [] })).toThrow(
-        "At least one workspace",
-      );
+      expect(() => makeSandboxLayer({ workspaces: [] })).toThrow("At least one workspace");
     });
   });
 

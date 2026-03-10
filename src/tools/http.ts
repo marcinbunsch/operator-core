@@ -42,7 +42,7 @@ export const HttpRequest = Tool.make("http_request", {
     }),
     headers: Schema.optional(Schema.String).annotations({
       description:
-        "Optional HTTP headers as JSON string (e.g. '{\"Content-Type\": \"application/json\"}')",
+        'Optional HTTP headers as JSON string (e.g. \'{"Content-Type": "application/json"}\')',
     }),
     body: Schema.optional(Schema.String).annotations({
       description: "Optional request body",

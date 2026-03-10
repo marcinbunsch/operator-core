@@ -26,7 +26,9 @@ type ReconnectOptions = {
 
 const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-export const createSocketModeReconnector = (options: ReconnectOptions = {}): SocketModeReconnector => {
+export const createSocketModeReconnector = (
+  options: ReconnectOptions = {},
+): SocketModeReconnector => {
   const setTimeoutFn = options.setTimeoutFn ?? setTimeout;
   const sleep = options.sleepFn ?? defaultSleep;
   const maxDelayMs = options.maxDelayMs ?? 5 * 60_000;
@@ -46,7 +48,9 @@ export const createSocketModeReconnector = (options: ReconnectOptions = {}): Soc
     consecutiveFailures += 1;
 
     const delayMs = Math.min(maxDelayMs, 1000 * 2 ** Math.min(consecutiveFailures, maxExponent));
-    log(`[slack] Scheduling Socket Mode reconnect in ${Math.round(delayMs / 1000)}s (reason: ${reason})`);
+    log(
+      `[slack] Scheduling Socket Mode reconnect in ${Math.round(delayMs / 1000)}s (reason: ${reason})`,
+    );
 
     setTimeoutFn(async () => {
       if (isStopping) {

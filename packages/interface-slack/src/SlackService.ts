@@ -156,7 +156,9 @@ export class SlackService extends Effect.Service<SlackService>()(
           });
           return postEffect.pipe(
             transientRetry,
-            Effect.tapError((err) => Effect.log(`[slack] postMessage failed after retries: ${err.operation}`)),
+            Effect.tapError((err) =>
+              Effect.log(`[slack] postMessage failed after retries: ${err.operation}`),
+            ),
             Effect.asVoid,
           );
         },

@@ -26,9 +26,7 @@ describe("markdownToMrkdwn", () => {
 
   it.effect("handles mixed formatting", () =>
     Effect.sync(() => {
-      const result = markdownToMrkdwn(
-        "**Bold** and _italic_ with [link](https://example.com)",
-      );
+      const result = markdownToMrkdwn("**Bold** and _italic_ with [link](https://example.com)");
       expect(result).toBe("*Bold* and _italic_ with <https://example.com|link>");
     }),
   );

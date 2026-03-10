@@ -47,7 +47,7 @@ const makeFailingLM = (error: Error) => {
  */
 const makeToolCallingLM = (
   toolCalls: Array<{ name: string; args: any }>,
-  finalResponse: string
+  finalResponse: string,
 ) => {
   let callCount = 0;
 
@@ -87,9 +87,7 @@ describe("runAgenticLoop", () => {
     it.effect("returns text response from LLM", () =>
       Effect.gen(function* () {
         const lm = yield* LanguageModel.LanguageModel;
-        const prompt = Prompt.make([
-          { role: "user" as const, content: "Hello" },
-        ]);
+        const prompt = Prompt.make([{ role: "user" as const, content: "Hello" }]);
 
         const result = yield* runAgenticLoop({
           languageModel: lm,
@@ -99,15 +97,13 @@ describe("runAgenticLoop", () => {
         expect(result.text).toBe("Hello, world!");
         expect(result.finishReason).toBe("complete");
         expect(result.iterations).toBe(1);
-      }).pipe(Effect.provide(makeMockLM({ text: "Hello, world!" })))
+      }).pipe(Effect.provide(makeMockLM({ text: "Hello, world!" }))),
     );
 
     it.effect("tracks token usage", () =>
       Effect.gen(function* () {
         const lm = yield* LanguageModel.LanguageModel;
-        const prompt = Prompt.make([
-          { role: "user" as const, content: "Test" },
-        ]);
+        const prompt = Prompt.make([{ role: "user" as const, content: "Test" }]);
 
         const result = yield* runAgenticLoop({
           languageModel: lm,
@@ -116,19 +112,13 @@ describe("runAgenticLoop", () => {
 
         expect(result.usage.inputTokens).toBe(100);
         expect(result.usage.outputTokens).toBe(50);
-      }).pipe(
-        Effect.provide(
-          makeMockLM({ text: "Response", inputTokens: 100, outputTokens: 50 })
-        )
-      )
+      }).pipe(Effect.provide(makeMockLM({ text: "Response", inputTokens: 100, outputTokens: 50 }))),
     );
 
     it.effect("calls onIteration callback", () =>
       Effect.gen(function* () {
         const lm = yield* LanguageModel.LanguageModel;
-        const prompt = Prompt.make([
-          { role: "user" as const, content: "Test" },
-        ]);
+        const prompt = Prompt.make([{ role: "user" as const, content: "Test" }]);
         const iterations: number[] = [];
 
         yield* runAgenticLoop({
@@ -138,7 +128,7 @@ describe("runAgenticLoop", () => {
         });
 
         expect(iterations).toEqual([1]);
-      }).pipe(Effect.provide(makeMockLM({ text: "Response" })))
+      }).pipe(Effect.provide(makeMockLM({ text: "Response" }))),
     );
   });
 
@@ -146,9 +136,7 @@ describe("runAgenticLoop", () => {
     it.effect("respects maxIterations setting", () =>
       Effect.gen(function* () {
         const lm = yield* LanguageModel.LanguageModel;
-        const prompt = Prompt.make([
-          { role: "user" as const, content: "Test" },
-        ]);
+        const prompt = Prompt.make([{ role: "user" as const, content: "Test" }]);
         const iterations: number[] = [];
 
         // Use a LM that always calls tools (would loop forever)
@@ -179,14 +167,12 @@ describe("runAgenticLoop", () => {
         expect(result.iterations).toBe(3);
         expect(result.finishReason).toBe("max_iterations");
         expect(iterations).toEqual([1, 2, 3]);
-      }).pipe(Effect.provide(makeMockLM({ text: "Response" })))
+      }).pipe(Effect.provide(makeMockLM({ text: "Response" }))),
     );
 
     it.effect("uses default max iterations of 10", () =>
       Effect.gen(function* () {
-        const prompt = Prompt.make([
-          { role: "user" as const, content: "Test" },
-        ]);
+        const prompt = Prompt.make([{ role: "user" as const, content: "Test" }]);
 
         // Create a LM that always returns tool calls
         const infiniteToolLM: LanguageModel.Service = {
@@ -213,7 +199,7 @@ describe("runAgenticLoop", () => {
 
         expect(result.iterations).toBe(10);
         expect(result.finishReason).toBe("max_iterations");
-      })
+      }),
     );
   });
 
@@ -221,9 +207,7 @@ describe("runAgenticLoop", () => {
     it.effect("calls onError callback when LLM fails", () =>
       Effect.gen(function* () {
         const lm = yield* LanguageModel.LanguageModel;
-        const prompt = Prompt.make([
-          { role: "user" as const, content: "Test" },
-        ]);
+        const prompt = Prompt.make([{ role: "user" as const, content: "Test" }]);
         let errorCaught: unknown = null;
 
         const result = yield* runAgenticLoop({
@@ -239,15 +223,13 @@ describe("runAgenticLoop", () => {
         expect(result.finishReason).toBe("error");
         expect(result.text).toBe(null);
         expect(errorCaught).toBeInstanceOf(Error);
-      }).pipe(Effect.provide(makeFailingLM(new Error("API Error"))))
+      }).pipe(Effect.provide(makeFailingLM(new Error("API Error")))),
     );
 
     it.effect("returns null text on error", () =>
       Effect.gen(function* () {
         const lm = yield* LanguageModel.LanguageModel;
-        const prompt = Prompt.make([
-          { role: "user" as const, content: "Test" },
-        ]);
+        const prompt = Prompt.make([{ role: "user" as const, content: "Test" }]);
 
         const result = yield* runAgenticLoop({
           languageModel: lm,
@@ -256,7 +238,7 @@ describe("runAgenticLoop", () => {
 
         expect(result.text).toBe(null);
         expect(result.finishReason).toBe("error");
-      }).pipe(Effect.provide(makeFailingLM(new Error("API Error"))))
+      }).pipe(Effect.provide(makeFailingLM(new Error("API Error")))),
     );
   });
 
@@ -276,7 +258,7 @@ describe("runAgenticLoop", () => {
 
         expect(result.text).toBe("I am a helpful assistant.");
         expect(result.finishReason).toBe("complete");
-      }).pipe(Effect.provide(makeMockLM({ text: "I am a helpful assistant." })))
+      }).pipe(Effect.provide(makeMockLM({ text: "I am a helpful assistant." }))),
     );
   });
 });

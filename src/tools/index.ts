@@ -34,6 +34,17 @@ export { Shell, ShellToolkit, ShellToolHandlers, ShellError } from "./shell.js";
 // HTTP tool
 export { HttpRequest, HttpToolkit, HttpToolHandlers, HttpRequestError } from "./http.js";
 
+// Scheduler tools
+export {
+  ScheduleTask,
+  ListSchedules,
+  DeleteSchedule,
+  PauseSchedule,
+  ResumeSchedule,
+  SchedulerToolkit,
+  SchedulerToolHandlers,
+} from "./scheduler/index.js";
+
 // Combined toolkit with all sandboxed tools
 import { FileRead, FileWrite, FileEdit, FileAppend, FilesystemToolHandlers } from "./filesystem.js";
 import { Shell, ShellToolHandlers } from "./shell.js";

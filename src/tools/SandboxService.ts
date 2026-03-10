@@ -50,17 +50,13 @@ export class SandboxService extends Context.Tag("SandboxService")<
      * Uses the default workspace for relative paths.
      * Fails if the resolved path escapes all allowed workspaces.
      */
-    readonly resolvePath: (
-      relativePath: string,
-    ) => Effect.Effect<string, SandboxViolationError>;
+    readonly resolvePath: (relativePath: string) => Effect.Effect<string, SandboxViolationError>;
 
     /**
      * Validate that an absolute path is within an allowed workspace.
      * Fails if the path escapes all allowed workspaces.
      */
-    readonly validatePath: (
-      absolutePath: string,
-    ) => Effect.Effect<string, SandboxViolationError>;
+    readonly validatePath: (absolutePath: string) => Effect.Effect<string, SandboxViolationError>;
 
     /**
      * Validate that a URL targets an allowed domain.
@@ -99,10 +95,7 @@ const isPrivateHost = (hostname: string): boolean => {
 /**
  * Check if a resolved path is within any of the allowed workspaces
  */
-const isPathInWorkspaces = (
-  resolved: string,
-  workspaces: ReadonlyArray<string>,
-): boolean => {
+const isPathInWorkspaces = (resolved: string, workspaces: ReadonlyArray<string>): boolean => {
   return workspaces.some((workspace) => {
     const relative = path.relative(workspace, resolved);
     return !relative.startsWith("..") && !path.isAbsolute(relative);

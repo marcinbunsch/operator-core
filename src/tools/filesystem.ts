@@ -140,9 +140,9 @@ export const FilesystemToolHandlers = FilesystemToolkit.toLayer(
         }).pipe(
           Effect.catchAll((e) => {
             const err = formatError(e, filePath);
-            return Effect.logInfo(`Tool result: file_read | path=${filePath} error=${err.error}`).pipe(
-              Effect.map(() => err),
-            );
+            return Effect.logInfo(
+              `Tool result: file_read | path=${filePath} error=${err.error}`,
+            ).pipe(Effect.map(() => err));
           }),
         ),
 
@@ -162,7 +162,9 @@ export const FilesystemToolHandlers = FilesystemToolkit.toLayer(
             catch: (e) => e,
           });
           const bytesWritten = Buffer.byteLength(content, "utf-8");
-          yield* Effect.logInfo(`Tool result: file_write | path=${filePath} bytesWritten=${bytesWritten}`);
+          yield* Effect.logInfo(
+            `Tool result: file_write | path=${filePath} bytesWritten=${bytesWritten}`,
+          );
           return {
             success: true as const,
             path: filePath,
@@ -171,9 +173,9 @@ export const FilesystemToolHandlers = FilesystemToolkit.toLayer(
         }).pipe(
           Effect.catchAll((e) => {
             const err = formatError(e, filePath);
-            return Effect.logInfo(`Tool result: file_write | path=${filePath} error=${err.error}`).pipe(
-              Effect.map(() => err),
-            );
+            return Effect.logInfo(
+              `Tool result: file_write | path=${filePath} error=${err.error}`,
+            ).pipe(Effect.map(() => err));
           }),
         ),
 
@@ -207,14 +209,16 @@ export const FilesystemToolHandlers = FilesystemToolkit.toLayer(
             catch: (e) => e,
           });
 
-          yield* Effect.logInfo(`Tool result: file_edit | path=${filePath} replacements=${replacements}`);
+          yield* Effect.logInfo(
+            `Tool result: file_edit | path=${filePath} replacements=${replacements}`,
+          );
           return { success: true as const, path: filePath, replacements };
         }).pipe(
           Effect.catchAll((e) => {
             const err = formatError(e, filePath);
-            return Effect.logInfo(`Tool result: file_edit | path=${filePath} error=${err.error}`).pipe(
-              Effect.map(() => err),
-            );
+            return Effect.logInfo(
+              `Tool result: file_edit | path=${filePath} error=${err.error}`,
+            ).pipe(Effect.map(() => err));
           }),
         ),
 
@@ -234,7 +238,9 @@ export const FilesystemToolHandlers = FilesystemToolkit.toLayer(
             catch: (e) => e,
           });
           const bytesAppended = Buffer.byteLength(content, "utf-8");
-          yield* Effect.logInfo(`Tool result: file_append | path=${filePath} bytesAppended=${bytesAppended}`);
+          yield* Effect.logInfo(
+            `Tool result: file_append | path=${filePath} bytesAppended=${bytesAppended}`,
+          );
           return {
             success: true as const,
             path: filePath,
@@ -243,9 +249,9 @@ export const FilesystemToolHandlers = FilesystemToolkit.toLayer(
         }).pipe(
           Effect.catchAll((e) => {
             const err = formatError(e, filePath);
-            return Effect.logInfo(`Tool result: file_append | path=${filePath} error=${err.error}`).pipe(
-              Effect.map(() => err),
-            );
+            return Effect.logInfo(
+              `Tool result: file_append | path=${filePath} error=${err.error}`,
+            ).pipe(Effect.map(() => err));
           }),
         ),
     };
