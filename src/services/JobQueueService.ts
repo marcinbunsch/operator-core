@@ -146,33 +146,54 @@ export class JobQueueService extends Effect.Service<JobQueueService>()(
       });
 
       /**
+       * Helper to update a job in the Ref by ID.
+       * This ensures we always update the current object, not an orphaned reference.
+       */
+      const updateJob = (
+        jobId: string,
+        updater: (job: Job) => Partial<Job>,
+      ): Effect.Effect<void> =>
+        Ref.update(jobsRef, (jobs) =>
+          jobs.map((j) => (j.id === jobId ? { ...j, ...updater(j) } : j)),
+        );
+
+      /**
        * Execute a job using its runner function.
        * Updates job status and timestamps, handles success/failure.
+       *
+       * IMPORTANT: Uses Ref.update instead of direct mutation because runners
+       * may call updateMetadata(), which creates new objects in the Ref.
+       * Direct mutation would orphan the job reference and lose status updates.
        */
       const runJob = (job: Job, runnerFn: RunnerFn): Effect.Effect<void> =>
         Effect.gen(function* () {
-          yield* log(`Starting job ${job.id.slice(0, 8)} (${job.type})`);
-          job.status = "running";
-          job.startedAt = new Date().toISOString();
+          const jobId = job.id;
+          yield* log(`Starting job ${jobId.slice(0, 8)} (${job.type})`);
+          yield* updateJob(jobId, () => ({
+            status: "running",
+            startedAt: new Date().toISOString(),
+          }));
           yield* saveToDisk;
 
           yield* runnerFn(job).pipe(
             Effect.tap(() =>
               Effect.gen(function* () {
-                job.status = "done";
-                yield* log(`Job ${job.id.slice(0, 8)} completed successfully`);
+                yield* updateJob(jobId, () => ({ status: "done" }));
+                yield* log(`Job ${jobId.slice(0, 8)} completed successfully`);
               }),
             ),
             Effect.catchAll((err) =>
               Effect.gen(function* () {
-                job.status = "failed";
-                job.error = err instanceof Error ? err.message : String(err);
-                yield* log(`Job ${job.id.slice(0, 8)} failed:`, err);
+                yield* updateJob(jobId, () => ({
+                  status: "failed",
+                  error: err instanceof Error ? err.message : String(err),
+                }));
+                yield* log(`Job ${jobId.slice(0, 8)} failed:`, err);
               }),
             ),
           );
 
-          job.endedAt = new Date().toISOString();
+          yield* updateJob(jobId, () => ({ endedAt: new Date().toISOString() }));
           yield* saveToDisk;
         });
 
